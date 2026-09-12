@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radio Broadcast Studio</title>
+    <style>
+        body {
+            background-color: #0b0c10;
+            color: #c5c6c7;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .dj-console {
+            background: linear-gradient(145deg, #1f2833, #151a21);
+            border-radius: 30px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            border: 1px solid #45f3ff22;
+        }
+
+        .dj-head {
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, #202833 40%, #45f3ff 95%);
+            border-radius: 50%;
+            margin: 0 auto 20px auto;
+            position: relative;
+            box-shadow: 0 0 20px rgba(69, 243, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dj-head::before, .dj-head::after {
+            content: '';
+            width: 12px;
+            height: 12px;
+            background-color: #0b0c10;
+            border-radius: 50%;
+            margin: 0 10px;
+            box-shadow: 0 0 8px #45f3ff;
+        }
+
+        .dj-head.talking::before, .dj-head.talking::after {
+            background-color: #ffffff;
+            animation: blink 0.2s infinite alternate;
+        }
+
+        h1 { color: #ffffff; margin: 0 0 5px 0; font-size: 1.6rem; }
+        .status { color: #66fcf1; font-size: 0.9rem; margin-bottom: 25px; min-height: 20px; }
+
+        .deck-interior {
+            background: #020c1b;
+            border-radius: 20px;
+            padding: 30px 20px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+        }
+
+        .radio-display-window {
+            background: #051329;
+            border: 2px solid #45f3ff44;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            position: relative;
+            white-space: nowrap;
+        }
+
+        .scrolling-text {
+            display: inline-block;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.2rem;
+            color: #45f3ff;
+            text-shadow: 0 0 5px #45f3ffbb;
+            font-weight: bold;
+            padding-left: 100%;
+            animation: marquee 10s linear infinite;
+            animation-play-state: paused;
+        }
+
+        .control-btn {
+            background: #45f3ff;
+            color: #0b0c10;
+            border: none;
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding: 15px 40px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(69, 243, 255, 0.3);
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.03);
+            background: #ffffff;
+        }
+
+        @keyframes marquee {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+
+        @keyframes blink {
+            0% { transform: scaleY(1); }
+            100% { transform: scaleY(0.1); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dj-console">
+    <div class="dj-head" id="robotFace"></div>
+    <h1>On-Air Radio</h1>
+    <div class="status" id="djStatus">System Offline</div>
+
+    <div class="deck-interior">
+        <div class="radio-display-window">
+            <div class="scrolling-text" id="marqueeDisplay">PRESS PLAY TO TUNE IN...</div>
+        </div>
+        
+        <button class="control-btn" id="powerBtn">▶ Tune In</button>
+    </div>
+</div>
+
+<script>
+    // Pair each song directly with its specific story voice file
+    const myPlaylist = [
+        { 
+            title: "Track 1 Name", 
+            songFile: "audio/music/song1.mp3", 
+            introFile: "audio/intros/song1-story.mp3" 
+        },
+        { 
+            title: "Track 2 Name", 
+            songFile: "audio/music/song2.mp3", 
+            introFile: "audio/intros/song2-story.mp3" 
+        }
+    ];
+
+    const player = new Audio();
+    let isPlaying = false;
+    let currentSongIndex = -1;
+
+    const robotFace = document.getElementById('robotFace');
+    const djStatus = document.getElementById('djStatus');
+    const marqueeDisplay = document.getElementById('marqueeDisplay');
+    const powerBtn = document.getElementById('powerBtn');
+
+    function playNextTrack() {
+        if (!isPlaying) return;
+
+        marqueeDisplay.style.animationPlayState = 'paused';
+
+        // Pick a random track from the playlist
+        let newIndex;
+        do {
+            newIndex = Math.floor(Math.random() * myPlaylist.length);
+        } while (newIndex === currentSongIndex && myPlaylist.length > 1);
+
+        currentSongIndex = newIndex;
+        const selectedItem = myPlaylist[currentSongIndex];
+
+        // Step 1: Play the story introduction for this track
+        player.src = selectedItem.introFile;
+        marqueeDisplay.innerText = "🎙️ DJ STORY: CREATION OF " + selectedItem.title.toUpperCase();
+        djStatus.innerText = "🤖 DJ Backstory Active";
+        robotFace.classList.add('talking');
+        
+        player.play();
+
+        // Step 2: Automatically transition to the song when the story finishes
+        player.onended = function startSong() {
+            robotFace.classList.remove('talking');
+            djStatus.innerText = "🎵 Track Streaming...";
+            
+            marqueeDisplay.innerText = "NOW PLAYING: " + selectedItem.title.toUpperCase() + "  * * * ";
+            marqueeDisplay.style.animationPlayState = 'running';
+            
+            player.src = selectedItem.songFile;
+            player.play();
+
+            // Step 3: Pick the next song and story when finished
+            player.onended = function finishedSong() {
+                if (isPlaying) {
+                    playNextTrack();
+                }
+            };
+        };
+    }
+
+    powerBtn.addEventListener('click', () => {
+        if (!isPlaying) {
+            isPlaying = true;
+            powerBtn.innerText = "⏸ Pause Radio";
+            playNextTrack();
+        } else {
+            isPlaying = false;
+            player.pause();
+            robotFace.classList.remove('talking');
+            marqueeDisplay.style.animationPlayState = 'paused';
+            powerBtn.innerText = "▶ Tune In";
+            djStatus.innerText = "Deck Paused";
+        }
+    });
+</script>
+
+</body>
+</html>
+
